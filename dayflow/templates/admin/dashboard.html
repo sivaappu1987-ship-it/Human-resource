@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">Admin Dashboard</h1>
+    <p class="page-date">{{ today.strftime('%A, %d %B %Y') }} &nbsp;·&nbsp; Overview of all employees</p>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-purple">👥</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ total_emp }}</div>
+      <div class="stat-label">Total Employees</div>
+      <div class="stat-sub">Active headcount</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">✅</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ present_today }}</div>
+      <div class="stat-label">Present Today</div>
+      <div class="stat-sub">Out of {{ total_emp }} employees</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon {% if pending_leaves > 0 %}stat-icon-amber{% else %}stat-icon-green{% endif %}">🏖️</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ pending_leaves }}</div>
+      <div class="stat-label">Pending Leave Requests</div>
+      <div class="stat-sub">Awaiting your approval</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-accent">💰</div>
+    <div class="stat-body">
+      <div class="stat-value" style="font-size:20px;">{{ payroll_sum | inr }}</div>
+      <div class="stat-label">Monthly Payroll</div>
+      <div class="stat-sub">Total across all employees</div>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Directory -->
+<div class="dash-section">
+  <div class="section-header">
+    <h2 class="section-heading">Employee Directory</h2>
+    <span class="section-badge">{{ employees | length }} records</span>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="employee-table">
+      <thead>
+        <tr>
+          <th>Emp ID</th>
+          <th>Name</th>
+          <th>Job Title</th>
+          <th>Department</th>
+          <th>Salary</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr>
+          <td><code class="emp-id-code">{{ emp.employee_id }}</code></td>
+          <td>
+            <div class="emp-name-cell">
+              <div class="emp-avatar-sm">{{ emp.name[0] }}</div>
+              <span>{{ emp.name }}</span>
+            </div>
+          </td>
+          <td>{{ emp.job_title or '—' }}</td>
+          <td>{{ emp.department or '—' }}</td>
+          <td class="salary-cell">{{ emp.salary | inr }}</td>
+          <td><span class="badge badge-{{ emp.status | status_badge }}">{{ emp.status }}</span></td>
+          <td>
+            <a href="{{ url_for('admin_employee_detail', emp_id=emp.id) }}"
+               class="btn btn-ghost btn-sm" id="edit-emp-{{ emp.employee_id }}">
+              Edit ›
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center;color:var(--clr-muted);padding:32px;">
+            No employees found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

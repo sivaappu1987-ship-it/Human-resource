@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Dayflow{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">
+      {% if now.hour < 12 %}Good morning{% elif now.hour < 17 %}Good afternoon{% else %}Good evening{% endif %},
+      {{ session.name.split()[0] }}! 👋
+    </h1>
+    <p class="page-date">{{ today.strftime('%A, %d %B %Y') }} &nbsp;·&nbsp; {{ user.employee_id }}</p>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+
+  <!-- Card 1: Identity -->
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-purple">👤</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ user.employee_id }}</div>
+      <div class="stat-label">{{ user.role | title }}</div>
+      <div class="stat-sub">{{ user.department or 'No Department' }}</div>
+    </div>
+  </div>
+
+  <!-- Card 2: Today's Attendance -->
+  <div class="stat-card">
+    <div class="stat-icon
+      {% if today_att %}
+        {% if today_att.status == 'Present' %}stat-icon-green
+        {% elif today_att.status == 'Absent' %}stat-icon-red
+        {% else %}stat-icon-amber{% endif %}
+      {% else %}stat-icon-muted{% endif %}">📅</div>
+    <div class="stat-body">
+      {% if today_att %}
+        <div class="stat-value">
+          <span class="badge badge-{{ today_att.status | status_badge }}">{{ today_att.status }}</span>
+        </div>
+        <div class="stat-label">Today's Status</div>
+        <div class="stat-sub">
+          {% if today_att.check_in %}{{ today_att.check_in }} – {{ today_att.check_out or '—' }}{% else %}No time logged{% endif %}
+        </div>
+      {% else %}
+        <div class="stat-value"><span class="badge badge-muted">Not Marked</span></div>
+        <div class="stat-label">Today's Status</div>
+        <div class="stat-sub">Attendance not recorded yet</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Card 3: Pending Leaves -->
+  <div class="stat-card">
+    <div class="stat-icon {% if pending_leaves > 0 %}stat-icon-amber{% else %}stat-icon-green{% endif %}">🏖️</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ pending_leaves }}</div>
+      <div class="stat-label">Pending Leaves</div>
+      <div class="stat-sub">Awaiting admin approval</div>
+    </div>
+  </div>
+
+  <!-- Card 4: Salary -->
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-accent">💰</div>
+    <div class="stat-body">
+      <div class="stat-value">{{ user.salary | inr }}</div>
+      <div class="stat-label">Monthly Salary</div>
+      <div class="stat-sub">{{ user.job_title or 'No Title Assigned' }}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent Attendance -->
+<div class="dash-section">
+  <div class="section-header">
+    <h2 class="section-heading">Recent Attendance</h2>
+    <span class="section-badge">Last 5 records</span>
+  </div>
+
+  {% if recent_att %}
+  <div class="activity-list">
+    {% for att in recent_att %}
+    <div class="activity-item">
+      <div class="activity-left">
+        <span class="activity-dot dot-{{ att.status | status_badge }}"></span>
+        <div>
+          <div class="activity-date">{{ att.date | friendly_date }}</div>
+          {% if att.check_in %}
+          <div class="activity-time">{{ att.check_in }} – {{ att.check_out or 'No checkout' }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <span class="badge badge-{{ att.status | status_badge }}">{{ att.status }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span>📭</span>
+    <p>No attendance records yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

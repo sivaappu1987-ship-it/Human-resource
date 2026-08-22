@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ emp.name }} — Admin — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm" id="btn-back">← Back</a>
+    <div>
+      <h1 class="page-greeting">{{ emp.name }}</h1>
+      <p class="page-date">{{ emp.employee_id }} · Edit Employee Profile</p>
+    </div>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('admin_employee_detail', emp_id=emp.id) }}" id="admin-emp-form">
+  <div class="profile-grid">
+
+    <!-- LEFT: Personal Info -->
+    <div class="card">
+      <h3 class="form-section-title">Personal Information</h3>
+      <div class="form-stack">
+
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name</label>
+          <input id="name" name="name" type="text" class="form-input"
+                 value="{{ emp.name }}" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input id="email" name="email" type="email" class="form-input"
+                 value="{{ emp.email }}" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone</label>
+          <input id="phone" name="phone" type="tel" class="form-input"
+                 value="{{ emp.phone or '' }}" placeholder="+91 98765 00000" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="address">Address</label>
+          <textarea id="address" name="address" class="form-input form-textarea"
+                    rows="3">{{ emp.address or '' }}</textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: Job Info -->
+    <div class="card">
+      <h3 class="form-section-title">Employment Details</h3>
+      <div class="form-stack">
+
+        <div class="form-group">
+          <label class="form-label" for="job_title">Job Title</label>
+          <input id="job_title" name="job_title" type="text" class="form-input"
+                 value="{{ emp.job_title or '' }}" placeholder="e.g. Software Engineer" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="department">Department</label>
+          <input id="department" name="department" type="text" class="form-input"
+                 value="{{ emp.department or '' }}" placeholder="e.g. Engineering" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="salary">Monthly Salary (₹)</label>
+          <input id="salary" name="salary" type="number" min="0" class="form-input"
+                 value="{{ emp.salary or '' }}" placeholder="45000" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="status">Account Status</label>
+          <select id="status" name="status" class="form-input form-select">
+            <option value="Active"   {% if emp.status == 'Active' %}selected{% endif %}>Active</option>
+            <option value="Inactive" {% if emp.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Save bar -->
+  <div class="save-bar">
+    <span class="save-bar-note">Changes will apply immediately upon saving.</span>
+    <div style="display:flex;gap:12px;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary" id="btn-save-emp">Save Changes</button>
+    </div>
+  </div>
+</form>
+{% endblock %}

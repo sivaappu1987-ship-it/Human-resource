@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}My Profile — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">My Profile</h1>
+    <p class="page-date">Manage your personal contact details</p>
+  </div>
+</div>
+
+<!-- Profile Header Card -->
+<div class="profile-header-card">
+  <div class="profile-avatar-lg">{{ user.name[0] }}</div>
+  <div class="profile-header-info">
+    <h2 class="profile-name">{{ user.name }}</h2>
+    <p class="profile-meta">{{ user.employee_id }} &nbsp;·&nbsp; {{ user.job_title or 'No Title' }} &nbsp;·&nbsp; {{ user.department or 'No Department' }}</p>
+    <span class="badge badge-{{ user.status | status_badge }}">{{ user.status }}</span>
+  </div>
+</div>
+
+<div class="profile-grid">
+
+  <!-- LEFT: Editable personal info -->
+  <div>
+    <form method="POST" action="/profile" class="card" id="profile-form">
+      <h3 class="form-section-title">Contact Details
+        <span class="form-section-note">You can edit these fields</span>
+      </h3>
+
+      <div class="form-stack">
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone Number</label>
+          <input id="phone" name="phone" type="tel" class="form-input"
+                 value="{{ user.phone or '' }}" placeholder="+91 98765 00000" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="address">Address</label>
+          <textarea id="address" name="address" class="form-input form-textarea"
+                    rows="3" placeholder="Your current address">{{ user.address or '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="btn-save-profile">Save Changes</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- RIGHT: Read-only job info -->
+  <div class="card">
+    <h3 class="form-section-title">Employment Details
+      <span class="form-section-note">Managed by HR</span>
+    </h3>
+
+    <div class="form-stack">
+      <div class="readonly-field">
+        <span class="readonly-label">Full Name</span>
+        <span class="readonly-value">{{ user.name }}</span>
+      </div>
+      <div class="readonly-field">
+        <span class="readonly-label">Email Address</span>
+        <span class="readonly-value">{{ user.email }}</span>
+      </div>
+      <div class="readonly-field">
+        <span class="readonly-label">Job Title</span>
+        <span class="readonly-value">{{ user.job_title or '—' }}</span>
+      </div>
+      <div class="readonly-field">
+        <span class="readonly-label">Department</span>
+        <span class="readonly-value">{{ user.department or '—' }}</span>
+      </div>
+      <div class="readonly-field">
+        <span class="readonly-label">Monthly Salary</span>
+        <span class="readonly-value salary-display">{{ user.salary | inr }}</span>
+      </div>
+      <div class="readonly-field">
+        <span class="readonly-label">Account Status</span>
+        <span class="badge badge-{{ user.status | status_badge }}">{{ user.status }}</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

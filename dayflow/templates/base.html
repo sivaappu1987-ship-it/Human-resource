@@ -22,8 +22,8 @@
     </div>
 
     <nav class="sidebar-nav" aria-label="Main navigation">
-      <a href="{{ url_for('dashboard') }}"
-         class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}"
+      <a href="{% if session.get('role') == 'admin' %}{{ url_for('admin_dashboard') }}{% else %}{{ url_for('dashboard') }}{% endif %}"
+         class="nav-item {% if request.endpoint in ('dashboard', 'admin_dashboard') %}active{% endif %}"
          id="nav-dashboard">
         <span class="nav-icon">🏠</span>
         <span class="nav-label">Dashboard</span>
@@ -59,8 +59,8 @@
 
       {% if session.get('role') == 'admin' %}
       <div class="nav-divider"></div>
-      <a href="{{ url_for('admin_panel') }}"
-         class="nav-item {% if 'admin' in request.endpoint %}active{% endif %}"
+      <a href="{{ url_for('admin_dashboard') }}"
+         class="nav-item {% if request.endpoint in ('admin_dashboard', 'admin_employee_detail', 'admin_panel') %}active{% endif %}"
          id="nav-admin">
         <span class="nav-icon">⚙️</span>
         <span class="nav-label">Admin Panel</span>
