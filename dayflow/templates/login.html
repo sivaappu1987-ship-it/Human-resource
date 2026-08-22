@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Sign In — Dayflow{% endblock %}
+{% block meta_desc %}Sign in to your Dayflow HRMS account.{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block public_content %}
+<div class="auth-bg" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="auth-wrapper">
+  <div class="auth-card" role="main">
+
+    <!-- Brand -->
+    <div class="auth-brand">
+      <div class="auth-logo">🌊</div>
+      <h1 class="auth-title">DAYFLOW</h1>
+      <p class="auth-subtitle">Human Resource System</p>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Form -->
+    <form method="POST" action="/login" class="auth-form" id="login-form" novalidate>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Work Email</label>
+        <div class="input-wrapper">
+          <span class="input-icon">✉</span>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            class="form-input with-icon"
+            placeholder="you@dayflow.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">
+          Password
+          <a href="#" class="form-label-link" tabindex="-1">Forgot password?</a>
+        </label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            class="form-input with-icon"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+          <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password">👁</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full" id="btn-signin">
+        Sign In →
+      </button>
+    </form>
+
+    <p class="auth-footer-text">
+      Don't have an account?
+      <a href="/signup" class="auth-link" id="link-signup">Create Account</a>
+    </p>
+
+    <!-- Demo credentials hint -->
+    <div class="demo-hint">
+      <span class="demo-hint-label">Demo credentials</span>
+      <code>admin@dayflow.com / admin123</code>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const toggleBtn = document.getElementById('togglePw');
+  const pwInput   = document.getElementById('password');
+  if (toggleBtn && pwInput) {
+    toggleBtn.addEventListener('click', () => {
+      pwInput.type = pwInput.type === 'password' ? 'text' : 'password';
+      toggleBtn.textContent = pwInput.type === 'password' ? '👁' : '🙈';
+    });
+  }
+</script>
+{% endblock %}

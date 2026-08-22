@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Create Account — Dayflow{% endblock %}
+{% block meta_desc %}Create your Dayflow HRMS employee account.{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block public_content %}
+<div class="auth-bg" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="auth-wrapper">
+  <div class="auth-card auth-card-wide" role="main">
+
+    <!-- Brand -->
+    <div class="auth-brand">
+      <div class="auth-logo">🌊</div>
+      <h1 class="auth-title">DAYFLOW</h1>
+      <p class="auth-subtitle">Create your account</p>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Form -->
+    <form method="POST" action="/signup" class="auth-form" id="signup-form" novalidate>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="employee_id">Employee ID</label>
+          <div class="input-wrapper">
+            <span class="input-icon">#</span>
+            <input
+              id="employee_id"
+              name="employee_id"
+              type="text"
+              class="form-input with-icon"
+              placeholder="e.g. EMP006"
+              value="{{ form.get('employee_id', '') }}"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="role">Role</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <select id="role" name="role" class="form-input form-select with-icon">
+              <option value="employee" {% if form.get('role') != 'admin' %}selected{% endif %}>Employee</option>
+              <option value="admin"    {% if form.get('role') == 'admin' %}selected{% endif %}>HR Admin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="name">Full Name</label>
+        <div class="input-wrapper">
+          <span class="input-icon">✦</span>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            class="form-input with-icon"
+            placeholder="Ananya Krishnan"
+            value="{{ form.get('name', '') }}"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Work Email</label>
+        <div class="input-wrapper">
+          <span class="input-icon">✉</span>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            class="form-input with-icon"
+            placeholder="you@dayflow.com"
+            value="{{ form.get('email', '') }}"
+            autocomplete="email"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              class="form-input with-icon"
+              placeholder="Min. 8 characters"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirm_password">Confirm Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input
+              id="confirm_password"
+              name="confirm_password"
+              type="password"
+              class="form-input with-icon"
+              placeholder="Repeat password"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Password strength bar -->
+      <div class="pw-strength" id="pwStrength" aria-label="Password strength">
+        <div class="pw-bar" id="pwBar"></div>
+      </div>
+      <p class="pw-hint" id="pwHint"></p>
+
+      <button type="submit" class="btn btn-primary btn-full" id="btn-signup">
+        Create Account →
+      </button>
+    </form>
+
+    <p class="auth-footer-text">
+      Already have an account?
+      <a href="/login" class="auth-link" id="link-login">Sign In</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const pwInput = document.getElementById('password');
+  const pwBar   = document.getElementById('pwBar');
+  const pwHint  = document.getElementById('pwHint');
+
+  const levels = [
+    { min: 0,  max: 5,  cls: 'pw-weak',   label: 'Too short',  color: '#ff5b5b' },
+    { min: 6,  max: 7,  cls: 'pw-fair',   label: 'Fair',       color: '#f5a623' },
+    { min: 8,  max: 11, cls: 'pw-good',   label: 'Good',       color: '#6c63ff' },
+    { min: 12, max: 99, cls: 'pw-strong', label: 'Strong',     color: '#2dce89' },
+  ];
+
+  if (pwInput) {
+    pwInput.addEventListener('input', () => {
+      const len = pwInput.value.length;
+      const lvl = levels.find(l => len >= l.min && len <= l.max) || levels[0];
+      const pct = Math.min((len / 16) * 100, 100);
+      pwBar.style.width = pct + '%';
+      pwBar.style.background = lvl.color;
+      pwHint.textContent = len > 0 ? lvl.label : '';
+      pwHint.style.color = lvl.color;
+    });
+  }
+</script>
+{% endblock %}

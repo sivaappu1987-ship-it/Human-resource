@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Dayflow{% endblock %}
+
+{% block content %}
+<div class="placeholder-page">
+  <div class="placeholder-icon">🏠</div>
+  <h2 class="placeholder-heading">Employee Dashboard</h2>
+  <p class="placeholder-sub">
+    Welcome, <strong>{{ session.get('name') }}</strong>!<br />
+    <span class="text-muted">{{ session.get('employee_id') }} · {{ session.get('role')|title }}</span>
+  </p>
+  <p class="placeholder-note">
+    Step 3 will replace this with the real dashboard — attendance overview, leave balance, pay slip, and quick actions.
+  </p>
+  <a href="/logout" class="btn btn-ghost btn-sm" id="placeholder-logout">Log Out</a>
+</div>
+{% endblock %}

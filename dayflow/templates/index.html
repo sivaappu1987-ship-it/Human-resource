@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Dayflow HRMS — Welcome{% endblock %}
+{% block meta_desc %}Dayflow is a modern, intuitive Human Resource Management System built for teams.{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+
+{% block public_content %}
+<!-- ── Landing Page ─────────────────────────────────────────────────────── -->
+<div class="landing-bg" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<nav class="landing-nav">
+  <div class="landing-logo">
+    <span class="brand-icon">🌊</span>
+    <span class="brand-name-lg">Dayflow</span>
+  </div>
+  <div class="landing-nav-actions">
+    <a href="/login" class="btn btn-ghost" id="btn-login">Log In</a>
+    <a href="/login" class="btn btn-primary" id="btn-get-started">Get Started</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span>✦</span> Human Resource Management
+    </div>
+    <h1 class="hero-title">
+      Manage your team<br />
+      <span class="gradient-text">effortlessly.</span>
+    </h1>
+    <p class="hero-subtitle">
+      Dayflow gives HR teams and employees a single, beautiful platform
+      for attendance tracking, leave management, payroll insights, and
+      more — all in real time.
+    </p>
+    <div class="hero-cta">
+      <a href="/login" class="btn btn-primary btn-lg" id="hero-cta-login">
+        Sign In to Your Account →
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-visual" aria-hidden="true">
+    <div class="dashboard-mock">
+      <div class="mock-header">
+        <span class="mock-dot red"></span>
+        <span class="mock-dot yellow"></span>
+        <span class="mock-dot green"></span>
+        <span class="mock-title">Dayflow Dashboard</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-card">
+          <div class="mock-card-icon">👥</div>
+          <div class="mock-card-text">
+            <div class="mock-label">Total Employees</div>
+            <div class="mock-value">6</div>
+          </div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-icon">📅</div>
+          <div class="mock-card-text">
+            <div class="mock-label">Present Today</div>
+            <div class="mock-value accent-green">5</div>
+          </div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-icon">🏖️</div>
+          <div class="mock-card-text">
+            <div class="mock-label">Pending Leaves</div>
+            <div class="mock-value accent-amber">2</div>
+          </div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-icon">💰</div>
+          <div class="mock-card-text">
+            <div class="mock-label">Payroll Due</div>
+            <div class="mock-value">Aug 31</div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-bar-chart" aria-label="Weekly attendance chart">
+        {% for h in [70, 90, 60, 100, 80, 95, 50] %}
+        <div class="mock-bar" style="height: {{ h }}%;"></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Feature Grid ───────────────────────────────────────────────────── -->
+<section class="features" aria-label="Key features">
+  <h2 class="features-heading">Everything HR needs, in one place</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <h3>Attendance Tracking</h3>
+      <p>Daily check-in/check-out logs, status indicators, and weekly overviews.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏖️</div>
+      <h3>Leave Management</h3>
+      <p>Apply for Paid, Sick, or Unpaid leave. Admins approve in a single click.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>Payroll Insights</h3>
+      <p>Monthly salary slips, deductions, and department-wise cost summaries.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👤</div>
+      <h3>Employee Profiles</h3>
+      <p>Centralised profiles with contact info, role, department, and history.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="landing-footer">
+  <p>© 2026 Dayflow HRMS · Built for the hackathon · Powered by Flask &amp; SQLite</p>
+</footer>
+{% endblock %}

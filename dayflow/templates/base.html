@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Dayflow HRMS{% endblock %}</title>
+  <meta name="description" content="{% block meta_desc %}Dayflow — Modern Human Resource Management System{% endblock %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+  {% if session.get('user_id') %}
+  <!-- ── Sidebar ──────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">🌊</span>
+      <span class="brand-name">Dayflow</span>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Main navigation">
+      <a href="{{ url_for('dashboard') }}"
+         class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}"
+         id="nav-dashboard">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+
+      <a href="{{ url_for('profile') }}"
+         class="nav-item {% if request.endpoint == 'profile' %}active{% endif %}"
+         id="nav-profile">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Profile</span>
+      </a>
+
+      <a href="{{ url_for('attendance') }}"
+         class="nav-item {% if request.endpoint == 'attendance' %}active{% endif %}"
+         id="nav-attendance">
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">Attendance</span>
+      </a>
+
+      <a href="{{ url_for('leaves') }}"
+         class="nav-item {% if request.endpoint == 'leaves' %}active{% endif %}"
+         id="nav-leave">
+        <span class="nav-icon">🏖️</span>
+        <span class="nav-label">Leave</span>
+      </a>
+
+      <a href="{{ url_for('payroll') }}"
+         class="nav-item {% if request.endpoint == 'payroll' %}active{% endif %}"
+         id="nav-payroll">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label">Payroll</span>
+      </a>
+
+      {% if session.get('role') == 'admin' %}
+      <div class="nav-divider"></div>
+      <a href="{{ url_for('admin_panel') }}"
+         class="nav-item {% if 'admin' in request.endpoint %}active{% endif %}"
+         id="nav-admin">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Admin Panel</span>
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="user-avatar">{{ session.get('name', 'U')[0] }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ session.get('name', 'User') }}</span>
+          <span class="user-role">{{ session.get('role', 'employee')|title }}</span>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn" id="nav-logout">
+        <span>⏻</span> Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
+      <div class="topbar-right">
+        <span class="topbar-greeting">
+          Good {% if now.hour < 12 %}morning{% elif now.hour < 17 %}afternoon{% else %}evening{% endif %},
+          {{ session.get('name', 'there').split()[0] }} 👋
+        </span>
+      </div>
+    </header>
+
+    <main class="page-content" id="main-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% else %}
+  <!-- Public layout (no sidebar) -->
+  <main id="main-content">{% block public_content %}{% endblock %}</main>
+  {% endif %}
+
+  <script>
+    // Sidebar toggle for mobile
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    if (toggle && sidebar) {
+      toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

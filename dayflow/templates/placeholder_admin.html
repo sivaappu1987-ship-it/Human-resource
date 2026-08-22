@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — Dayflow{% endblock %}
+
+{% block content %}
+<div class="placeholder-page">
+  <div class="placeholder-icon">⚙️</div>
+  <h2 class="placeholder-heading">Admin Dashboard</h2>
+  <p class="placeholder-sub">
+    Welcome, <strong>{{ session.get('name') }}</strong>!<br />
+    <span class="text-muted">{{ session.get('employee_id') }} · HR Administrator</span>
+  </p>
+  <p class="placeholder-note">
+    Step 3 will replace this with the full admin dashboard — employee management, leave approvals, attendance reports, and payroll overview.
+  </p>
+  <a href="/logout" class="btn btn-ghost btn-sm" id="placeholder-admin-logout">Log Out</a>
+</div>
+{% endblock %}
