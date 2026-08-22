@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Leave Approvals — Admin — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">Leave Approvals</h1>
+    <p class="page-date">Review, approve, or reject employee leave requests</p>
+  </div>
+</div>
+
+<div class="dash-section">
+  <div class="section-header">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <h2 class="section-heading">Leave Applications</h2>
+      <!-- Filter toggle -->
+      <div class="filter-toggle">
+        <a href="{{ url_for('admin_leaves', filter='pending') }}"
+           class="filter-btn {% if filter_status == 'pending' %}active{% endif %}"
+           id="filter-pending">
+          Pending ({{ pending_count }})
+        </a>
+        <a href="{{ url_for('admin_leaves', filter='all') }}"
+           class="filter-btn {% if filter_status == 'all' %}active{% endif %}"
+           id="filter-all">
+          All Requests ({{ all_count }})
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% if records %}
+  <div class="table-wrapper">
+    <table id="admin-leaves-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Emp ID</th>
+          <th>Type</th>
+          <th>Duration</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th style="min-width: 240px;">Action / Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td>
+            <div class="emp-name-cell">
+              <div class="emp-avatar-sm">{{ rec.emp_name[0] }}</div>
+              <span>{{ rec.emp_name }}</span>
+            </div>
+          </td>
+          <td><code class="emp-id-code">{{ rec.emp_code }}</code></td>
+          <td><strong>{{ rec.leave_type }}</strong></td>
+          <td>
+            <div style="font-size:13px; font-weight:var(--fw-medium);">
+              {{ rec.start_date | friendly_date }}
+              {% if rec.start_date != rec.end_date %}
+              <br><span style="color:var(--clr-muted); font-size:11px;">to {{ rec.end_date | friendly_date }}</span>
+              {% endif %}
+            </div>
+          </td>
+          <td style="max-width:220px; font-size:13px; color:var(--clr-text);">{{ rec.reason }}</td>
+          <td>
+            <span class="badge badge-{{ rec.status | status_badge }}">{{ rec.status }}</span>
+          </td>
+          <td>
+            {% if rec.status == 'Pending' %}
+            <form method="POST" action="{{ url_for('admin_leave_approve', leave_id=rec.id) }}" class="admin-leave-action-form" style="display:flex; flex-direction:column; gap:6px;">
+              <input type="text" name="admin_comment" placeholder="Optional admin comment..." class="form-input" style="font-size:12px; padding:5px 10px;" />
+              <div style="display:flex; gap:6px;">
+                <button type="submit" class="btn btn-sm btn-approve" style="flex:1; padding:5px 8px; font-size:12px;" id="btn-approve-{{ rec.id }}">
+                  ✅ Approve
+                </button>
+                <button type="submit" formaction="{{ url_for('admin_leave_reject', leave_id=rec.id) }}" class="btn btn-sm btn-reject" style="flex:1; padding:5px 8px; font-size:12px;" id="btn-reject-{{ rec.id }}">
+                  ❌ Reject
+                </button>
+              </div>
+            </form>
+            {% else %}
+            <div style="font-size:13px;">
+              {% if rec.admin_comment %}
+              <span style="color:var(--clr-muted);">Comment:</span> <span style="color:var(--clr-text);">{{ rec.admin_comment }}</span>
+              {% else %}
+              <span class="text-muted">No comment provided</span>
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span>🎉</span>
+    <p>No {% if filter_status == 'pending' %}pending{% endif %} leave requests found.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

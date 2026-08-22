@@ -1,11 +1,13 @@
+import base64
 import os
 import sqlite3
-from datetime import date, datetime
+import time
+from datetime import date, datetime, timedelta
 from functools import wraps
 
 from flask import (
     Flask, render_template, g, session,
-    redirect, url_for, request, flash, abort
+    redirect, url_for, request, flash, abort, jsonify
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -18,6 +20,16 @@ def login_required(f):
         if "user_id" not in session:
             flash("Please log in to continue.", "info")
             return redirect(url_for("login"))
+        try:
+            conn = sqlite3.connect(DATABASE)
+            row = conn.execute("SELECT id FROM users WHERE id=?", (session["user_id"],)).fetchone()
+            conn.close()
+            if not row:
+                session.clear()
+                flash("Session expired. Please log in again.", "info")
+                return redirect(url_for("login"))
+        except Exception:
+            pass
         return f(*args, **kwargs)
     return decorated
 
@@ -123,6 +135,7 @@ def create_app():
             session.update({
                 "user_id": user["id"], "employee_id": user["employee_id"],
                 "name": user["name"], "role": user["role"], "email": user["email"],
+                "profile_picture_url": user["profile_picture_url"] if "profile_picture_url" in user.keys() else None,
             })
             flash(f"Welcome back, {user['name'].split()[0]}!", "success")
             return redirect(url_for("admin_dashboard" if user["role"] == "admin" else "dashboard"))
@@ -186,6 +199,11 @@ def create_app():
         today_str = date.today().isoformat()
 
         user         = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+        if not user:
+            session.clear()
+            flash("Session expired. Please log in again.", "info")
+            return redirect(url_for("login"))
+
         today_att    = db.execute(
             "SELECT * FROM attendance WHERE user_id=? AND date=?", (uid, today_str)
         ).fetchone()
@@ -205,34 +223,222 @@ def create_app():
     def profile():
         db  = get_db()
         uid = session["user_id"]
+        # Ensure column exists if database was created prior
+        try:
+            db.execute("ALTER TABLE users ADD COLUMN profile_picture_url TEXT")
+            db.commit()
+        except Exception:
+            pass
+
         if request.method == "POST":
             phone   = request.form.get("phone", "").strip()
             address = request.form.get("address", "").strip()
-            db.execute("UPDATE users SET phone=?, address=? WHERE id=?",
-                       (phone or None, address or None, uid))
+            pic_url = request.form.get("profile_picture_url", "").strip()
+            db.execute("UPDATE users SET phone=?, address=?, profile_picture_url=? WHERE id=?",
+                       (phone or None, address or None, pic_url or None, uid))
             db.commit()
             flash("Profile updated successfully!", "success")
             return redirect(url_for("profile"))
         user = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+        if not user:
+            session.clear()
+            flash("Session expired. Please log in again.", "info")
+            return redirect(url_for("login"))
         return render_template("employee/profile.html", user=user)
 
-    # Stubs for Step 4 / 5
+    @app.route("/profile/upload-photo", methods=["POST"])
+    @login_required
+    def profile_upload_photo():
+        uid = session["user_id"]
+        db  = get_db()
+
+        image_data = None
+        if request.is_json:
+            image_data = (request.json or {}).get("image_data")
+        else:
+            image_data = request.form.get("image_data")
+
+        file = request.files.get("photo_file")
+
+        uploads_dir = os.path.join(app.static_folder, "uploads", "avatars")
+        os.makedirs(uploads_dir, exist_ok=True)
+
+        filename = f"avatar_{uid}_{int(time.time())}.png"
+        filepath = os.path.join(uploads_dir, filename)
+        url_path = f"/static/uploads/avatars/{filename}"
+
+        if image_data and "base64," in image_data:
+            header, encoded = image_data.split("base64,", 1)
+            data = base64.b64decode(encoded)
+            with open(filepath, "wb") as f:
+                f.write(data)
+        elif file and file.filename:
+            file.save(filepath)
+        else:
+            if request.is_json:
+                return jsonify({"success": False, "error": "No image data provided"}), 400
+            flash("No image provided for upload.", "error")
+            return redirect(url_for("profile"))
+
+        # Update DB & Session
+        db.execute("UPDATE users SET profile_picture_url=? WHERE id=?", (url_path, uid))
+        db.commit()
+        session["profile_picture_url"] = url_path
+
+        if request.is_json:
+            return jsonify({"success": True, "url": url_path})
+
+        flash("Profile photo updated successfully!", "success")
+        return redirect(url_for("profile"))
+
+    # ── Attendance status helper ──────────────────────────────────────────────
+
+    def checkin_status(time_str):
+        """Determine Present vs Half-day based on check-in time string HH:MM."""
+        try:
+            h, m = int(time_str[:2]), int(time_str[3:5])
+            minutes = h * 60 + m
+            return "Present" if minutes <= 9 * 60 + 30 else "Half-day"
+        except Exception:
+            return "Present"
+
+    # ── Employee Attendance ───────────────────────────────────────────────────
+
     @app.route("/attendance")
     @login_required
     def attendance():
-        return render_template("employee/dashboard.html",
-                               user=get_db().execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone(),
-                               today_att=None, pending_leaves=0, recent_att=[])
+        db  = get_db()
+        uid = session["user_id"]
+        today_str = date.today().isoformat()
+        today_att = db.execute(
+            "SELECT * FROM attendance WHERE user_id=? AND date=?", (uid, today_str)
+        ).fetchone()
+
+        view = request.args.get("view", "week")   # "week" or "all"
+        if view == "week":
+            since = (date.today() - timedelta(days=6)).isoformat()
+            records = db.execute(
+                "SELECT * FROM attendance WHERE user_id=? AND date>=? ORDER BY date DESC",
+                (uid, since)
+            ).fetchall()
+        else:
+            records = db.execute(
+                "SELECT * FROM attendance WHERE user_id=? ORDER BY date DESC", (uid,)
+            ).fetchall()
+
+        return render_template("employee/attendance.html",
+                               today_att=today_att, records=records, view=view)
+
+    @app.route("/attendance/checkin", methods=["POST"])
+    @login_required
+    def attendance_checkin():
+        db  = get_db()
+        uid = session["user_id"]
+        today_str = date.today().isoformat()
+
+        existing = db.execute(
+            "SELECT * FROM attendance WHERE user_id=? AND date=?", (uid, today_str)
+        ).fetchone()
+        if existing:
+            flash("You have already checked in today!", "info")
+            return redirect(url_for("attendance"))
+
+        now_time = datetime.now().strftime("%H:%M")
+        status   = checkin_status(now_time)
+        db.execute(
+            "INSERT INTO attendance (user_id, date, check_in, status) VALUES (?,?,?,?)",
+            (uid, today_str, now_time, status)
+        )
+        db.commit()
+        flash(f"Checked in at {now_time}. Status: {status}.", "success")
+        return redirect(url_for("attendance"))
+
+    @app.route("/attendance/checkout", methods=["POST"])
+    @login_required
+    def attendance_checkout():
+        db  = get_db()
+        uid = session["user_id"]
+        today_str = date.today().isoformat()
+
+        existing = db.execute(
+            "SELECT * FROM attendance WHERE user_id=? AND date=?", (uid, today_str)
+        ).fetchone()
+        if not existing or not existing["check_in"]:
+            flash("Please check in first!", "error")
+            return redirect(url_for("attendance"))
+        if existing["check_out"]:
+            flash("You have already checked out today.", "info")
+            return redirect(url_for("attendance"))
+
+        now_time = datetime.now().strftime("%H:%M")
+        db.execute(
+            "UPDATE attendance SET check_out=? WHERE user_id=? AND date=?",
+            (now_time, uid, today_str)
+        )
+        db.commit()
+        flash(f"Checked out at {now_time}. Have a great evening!", "success")
+        return redirect(url_for("attendance"))
+
+    # ── Employee Leaves ───────────────────────────────────────────────────────
 
     @app.route("/leaves")
     @login_required
     def leaves():
-        return redirect(url_for("dashboard"))
+        db  = get_db()
+        uid = session["user_id"]
+        my_leaves = db.execute(
+            "SELECT * FROM leaves WHERE user_id=? ORDER BY id DESC", (uid,)
+        ).fetchall()
+        return render_template("employee/leaves.html", leaves=my_leaves)
+
+    @app.route("/leaves/apply", methods=["POST"])
+    @login_required
+    def leaves_apply():
+        db = get_db()
+        uid = session["user_id"]
+        leave_type = request.form.get("leave_type", "").strip()
+        start_date = request.form.get("start_date", "").strip()
+        end_date   = request.form.get("end_date", "").strip()
+        reason     = request.form.get("reason", "").strip()
+
+        if not all([leave_type, start_date, end_date, reason]):
+            flash("All fields are required to submit a leave request.", "error")
+            return redirect(url_for("leaves"))
+
+        if leave_type not in ("Paid", "Sick", "Unpaid"):
+            flash("Invalid leave type selected.", "error")
+            return redirect(url_for("leaves"))
+
+        try:
+            s_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            e_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            if e_dt < s_dt:
+                flash("End date cannot be earlier than start date.", "error")
+                return redirect(url_for("leaves"))
+        except ValueError:
+            flash("Invalid date format.", "error")
+            return redirect(url_for("leaves"))
+
+        db.execute(
+            """INSERT INTO leaves (user_id, leave_type, start_date, end_date, reason, status)
+               VALUES (?, ?, ?, ?, ?, 'Pending')""",
+            (uid, leave_type, start_date, end_date, reason)
+        )
+        db.commit()
+        flash("Leave request submitted successfully!", "success")
+        return redirect(url_for("leaves"))
 
     @app.route("/payroll")
     @login_required
     def payroll():
-        return redirect(url_for("dashboard"))
+        db  = get_db()
+        uid = session["user_id"]
+        user = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+        if not user:
+            session.clear()
+            flash("Session expired. Please log in again.", "info")
+            return redirect(url_for("login"))
+        return render_template("employee/payroll.html", user=user)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # ADMIN ROUTES
@@ -309,6 +515,125 @@ def create_app():
             return redirect(url_for("admin_employee_detail", emp_id=emp_id))
 
         return render_template("admin/employee_detail.html", emp=emp)
+
+    # ── Admin Attendance ──────────────────────────────────────────────────────
+
+    @app.route("/admin/attendance")
+    @login_required
+    @admin_required
+    def admin_attendance():
+        db = get_db()
+        filter_date = request.args.get("date", date.today().isoformat())
+
+        records = db.execute(
+            """SELECT a.*, u.name as emp_name, u.employee_id as emp_code
+               FROM attendance a
+               JOIN users u ON a.user_id = u.id
+               WHERE a.date=?
+               ORDER BY u.employee_id""",
+            (filter_date,)
+        ).fetchall()
+
+        present_count  = sum(1 for r in records if r["status"] == "Present")
+        halfday_count  = sum(1 for r in records if r["status"] == "Half-day")
+        absent_count   = sum(1 for r in records if r["status"] == "Absent")
+        leave_count    = sum(1 for r in records if r["status"] == "Leave")
+
+        return render_template("admin/attendance.html",
+                               records=records, filter_date=filter_date,
+                               present_count=present_count, halfday_count=halfday_count,
+                               absent_count=absent_count, leave_count=leave_count)
+
+    # ── Admin Leaves ──────────────────────────────────────────────────────────
+
+    @app.route("/admin/leaves")
+    @login_required
+    @admin_required
+    def admin_leaves():
+        db = get_db()
+        filter_status = request.args.get("filter", "pending").lower()
+
+        if filter_status == "pending":
+            records = db.execute(
+                """SELECT l.*, u.name as emp_name, u.employee_id as emp_code
+                   FROM leaves l
+                   JOIN users u ON l.user_id = u.id
+                   WHERE l.status='Pending'
+                   ORDER BY l.id DESC"""
+            ).fetchall()
+        else:
+            records = db.execute(
+                """SELECT l.*, u.name as emp_name, u.employee_id as emp_code
+                   FROM leaves l
+                   JOIN users u ON l.user_id = u.id
+                   ORDER BY l.id DESC"""
+            ).fetchall()
+
+        pending_count = db.execute(
+            "SELECT COUNT(*) as cnt FROM leaves WHERE status='Pending'"
+        ).fetchone()["cnt"]
+        all_count = db.execute("SELECT COUNT(*) as cnt FROM leaves").fetchone()["cnt"]
+
+        return render_template("admin/leaves.html",
+                               records=records, filter_status=filter_status,
+                               pending_count=pending_count, all_count=all_count)
+
+    @app.route("/admin/leaves/<int:leave_id>/approve", methods=["POST"])
+    @login_required
+    @admin_required
+    def admin_leave_approve(leave_id):
+        db = get_db()
+        comment = request.form.get("admin_comment", "").strip() or None
+
+        leave = db.execute("SELECT * FROM leaves WHERE id=?", (leave_id,)).fetchone()
+        if not leave:
+            flash("Leave request not found.", "error")
+            return redirect(url_for("admin_leaves"))
+
+        db.execute(
+            "UPDATE leaves SET status='Approved', admin_comment=? WHERE id=?",
+            (comment, leave_id)
+        )
+        db.commit()
+        flash(f"Leave request #{leave_id} approved.", "success")
+        return redirect(url_for("admin_leaves"))
+
+    @app.route("/admin/leaves/<int:leave_id>/reject", methods=["POST"])
+    @login_required
+    @admin_required
+    def admin_leave_reject(leave_id):
+        db = get_db()
+        comment = request.form.get("admin_comment", "").strip() or None
+
+        leave = db.execute("SELECT * FROM leaves WHERE id=?", (leave_id,)).fetchone()
+        if not leave:
+            flash("Leave request not found.", "error")
+            return redirect(url_for("admin_leaves"))
+
+        db.execute(
+            "UPDATE leaves SET status='Rejected', admin_comment=? WHERE id=?",
+            (comment, leave_id)
+        )
+        db.commit()
+        flash(f"Leave request #{leave_id} rejected.", "error")
+        return redirect(url_for("admin_leaves"))
+
+    # ── Admin Payroll ──────────────────────────────────────────────────────────
+
+    @app.route("/admin/payroll")
+    @login_required
+    @admin_required
+    def admin_payroll():
+        db = get_db()
+        payroll_sum = db.execute(
+            "SELECT COALESCE(SUM(salary),0) as total FROM users WHERE role='employee'"
+        ).fetchone()["total"]
+        employees = db.execute(
+            """SELECT id, employee_id, name, job_title, department, salary, status
+               FROM users WHERE role='employee' ORDER BY employee_id"""
+        ).fetchall()
+        return render_template("admin/payroll.html",
+                               payroll_sum=payroll_sum, employees=employees)
 
     @app.route("/admin")
     @login_required

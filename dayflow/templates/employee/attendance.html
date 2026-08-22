@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Attendance — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">My Attendance</h1>
+    <p class="page-date">{{ today.strftime('%A, %d %B %Y') }}</p>
+  </div>
+</div>
+
+<!-- ── Check-in / Check-out Widget ─────────────────────────────── -->
+<div class="checkin-widget
+  {% if not today_att %}checkin-widget-idle
+  {% elif today_att.check_out %}checkin-widget-done
+  {% else %}checkin-widget-out{% endif %}">
+
+  {% if not today_att %}
+  <!-- State 0: Not checked in yet -->
+  <div class="checkin-icon">🕘</div>
+  <div class="checkin-body">
+    <h2 class="checkin-heading">Ready to start your day?</h2>
+    <p class="checkin-sub">You haven't checked in yet for today.</p>
+    <form method="POST" action="/attendance/checkin" id="form-checkin">
+      <button type="submit" class="btn btn-checkin" id="btn-checkin">
+        ✅ Check In
+      </button>
+    </form>
+  </div>
+
+  {% elif not today_att.check_out %}
+  <!-- State 1: Checked in, not checked out -->
+  <div class="checkin-icon">⏱️</div>
+  <div class="checkin-body">
+    <h2 class="checkin-heading">You're clocked in!</h2>
+    <p class="checkin-sub">
+      Checked in at <strong>{{ today_att.check_in }}</strong>
+      &nbsp;·&nbsp;
+      <span class="badge badge-{{ today_att.status | status_badge }}">{{ today_att.status }}</span>
+    </p>
+    <form method="POST" action="/attendance/checkout" id="form-checkout">
+      <button type="submit" class="btn btn-checkout" id="btn-checkout">
+        🔴 Check Out
+      </button>
+    </form>
+  </div>
+
+  {% else %}
+  <!-- State 2: Both check-in and check-out recorded -->
+  <div class="checkin-icon">🎉</div>
+  <div class="checkin-body">
+    <h2 class="checkin-heading">You're done for today!</h2>
+    <p class="checkin-sub">
+      Checked in at <strong>{{ today_att.check_in }}</strong>
+      &nbsp;·&nbsp; Checked out at <strong>{{ today_att.check_out }}</strong>
+    </p>
+    <div class="checkin-times">
+      <div class="checkin-time-box">
+        <span class="ctb-label">Check In</span>
+        <span class="ctb-value">{{ today_att.check_in }}</span>
+      </div>
+      <div class="ctb-sep">→</div>
+      <div class="checkin-time-box">
+        <span class="ctb-label">Check Out</span>
+        <span class="ctb-value">{{ today_att.check_out }}</span>
+      </div>
+      <div class="ctb-sep">·</div>
+      <div class="checkin-time-box">
+        <span class="ctb-label">Status</span>
+        <span class="badge badge-{{ today_att.status | status_badge }}">{{ today_att.status }}</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── Attendance History ─────────────────────────────────────── -->
+<div class="dash-section">
+  <div class="section-header">
+    <h2 class="section-heading">Attendance History</h2>
+    <!-- Filter toggle -->
+    <div class="filter-toggle">
+      <a href="{{ url_for('attendance', view='week') }}"
+         class="filter-btn {% if view == 'week' %}active{% endif %}"
+         id="filter-week">This Week</a>
+      <a href="{{ url_for('attendance', view='all') }}"
+         class="filter-btn {% if view == 'all' %}active{% endif %}"
+         id="filter-all">All Records</a>
+    </div>
+  </div>
+
+  {% if records %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Check In</th>
+          <th>Check Out</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td>{{ rec.date | friendly_date }}</td>
+          <td>{{ rec.check_in or '—' }}</td>
+          <td>{{ rec.check_out or '—' }}</td>
+          <td><span class="badge badge-{{ rec.status | status_badge }}">{{ rec.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span>📭</span>
+    <p>No attendance records found for this period.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

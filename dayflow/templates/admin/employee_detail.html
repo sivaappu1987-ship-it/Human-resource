@@ -5,6 +5,13 @@
 <div class="page-header">
   <div style="display:flex;align-items:center;gap:16px;">
     <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm" id="btn-back">← Back</a>
+    <div class="profile-avatar-lg" style="width:48px; height:48px; font-size:20px; overflow:hidden;">
+      {% if emp.profile_picture_url %}
+      <img src="{{ emp.profile_picture_url }}" alt="{{ emp.name }}" class="avatar-img" />
+      {% else %}
+      {{ emp.name[0] }}
+      {% endif %}
+    </div>
     <div>
       <h1 class="page-greeting">{{ emp.name }}</h1>
       <p class="page-date">{{ emp.employee_id }} · Edit Employee Profile</p>

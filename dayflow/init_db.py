@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS users (
     job_title   TEXT,
     department  TEXT,
     salary      INTEGER,
-    status      TEXT    NOT NULL DEFAULT 'Active'
+    status      TEXT    NOT NULL DEFAULT 'Active',
+    profile_picture_url TEXT
 );
 
 CREATE TABLE IF NOT EXISTS attendance (

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Leave Management — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">Leave Management</h1>
+    <p class="page-date">Submit new time off requests and monitor status</p>
+  </div>
+</div>
+
+<!-- ── Apply for Leave Form ────────────────────────────────────────── -->
+<div class="dash-section" style="margin-bottom: 28px;">
+  <div class="section-header">
+    <h2 class="section-heading">🏖️ Apply for Leave</h2>
+  </div>
+  <form method="POST" action="{{ url_for('leaves_apply') }}" id="form-apply-leave" class="form-stack">
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label" for="leave_type">Leave Type *</label>
+        <select id="leave_type" name="leave_type" class="form-input form-select" required>
+          <option value="Paid">Paid Leave</option>
+          <option value="Sick">Sick Leave</option>
+          <option value="Unpaid">Unpaid Leave</option>
+        </select>
+      </div>
+      <div class="form-row-2" style="gap:12px;">
+        <div class="form-group">
+          <label class="form-label" for="start_date">Start Date *</label>
+          <input type="date" id="start_date" name="start_date" class="form-input" required value="{{ today.isoformat() }}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="end_date">End Date *</label>
+          <input type="date" id="end_date" name="end_date" class="form-input" required value="{{ today.isoformat() }}" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="reason">Reason for Leave *</label>
+      <textarea id="reason" name="reason" class="form-input form-textarea" rows="3" placeholder="Provide a brief explanation for your leave request..." required></textarea>
+    </div>
+
+    <div class="form-actions" style="margin-top: 10px;">
+      <button type="submit" class="btn btn-primary" id="btn-submit-leave">
+        ✈️ Submit Leave Request
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ── My Leave Requests Table ────────────────────────────────────── -->
+<div class="dash-section">
+  <div class="section-header">
+    <h2 class="section-heading">My Leave Requests</h2>
+    <span class="section-badge">{{ leaves | length }} requests</span>
+  </div>
+
+  {% if leaves %}
+  <div class="table-wrapper">
+    <table id="employee-leaves-table">
+      <thead>
+        <tr>
+          <th>Leave Type</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Admin Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in leaves %}
+        <tr>
+          <td><strong>{{ rec.leave_type }}</strong></td>
+          <td>{{ rec.start_date | friendly_date }}</td>
+          <td>{{ rec.end_date | friendly_date }}</td>
+          <td style="max-width:240px; color:var(--clr-text);">{{ rec.reason }}</td>
+          <td>
+            <span class="badge badge-{{ rec.status | status_badge }}">{{ rec.status }}</span>
+          </td>
+          <td>
+            {% if rec.admin_comment %}
+            <span style="font-size:13px; color:var(--clr-primary-h);">💬 {{ rec.admin_comment }}</span>
+            {% else %}
+            <span class="text-muted" style="font-size:13px;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span>📭</span>
+    <p>You have not submitted any leave requests yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

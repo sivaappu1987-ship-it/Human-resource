@@ -36,22 +36,22 @@
         <span class="nav-label">Profile</span>
       </a>
 
-      <a href="{{ url_for('attendance') }}"
-         class="nav-item {% if request.endpoint == 'attendance' %}active{% endif %}"
+      <a href="{% if session.get('role') == 'admin' %}{{ url_for('admin_attendance') }}{% else %}{{ url_for('attendance') }}{% endif %}"
+         class="nav-item {% if request.endpoint in ('attendance', 'attendance_checkin', 'attendance_checkout', 'admin_attendance') %}active{% endif %}"
          id="nav-attendance">
         <span class="nav-icon">📅</span>
         <span class="nav-label">Attendance</span>
       </a>
 
-      <a href="{{ url_for('leaves') }}"
-         class="nav-item {% if request.endpoint == 'leaves' %}active{% endif %}"
+      <a href="{% if session.get('role') == 'admin' %}{{ url_for('admin_leaves') }}{% else %}{{ url_for('leaves') }}{% endif %}"
+         class="nav-item {% if request.endpoint in ('leaves', 'leaves_apply', 'admin_leaves', 'admin_leave_approve', 'admin_leave_reject') %}active{% endif %}"
          id="nav-leave">
         <span class="nav-icon">🏖️</span>
         <span class="nav-label">Leave</span>
       </a>
 
-      <a href="{{ url_for('payroll') }}"
-         class="nav-item {% if request.endpoint == 'payroll' %}active{% endif %}"
+      <a href="{% if session.get('role') == 'admin' %}{{ url_for('admin_payroll') }}{% else %}{{ url_for('payroll') }}{% endif %}"
+         class="nav-item {% if request.endpoint in ('payroll', 'admin_payroll') %}active{% endif %}"
          id="nav-payroll">
         <span class="nav-icon">💰</span>
         <span class="nav-label">Payroll</span>
@@ -70,10 +70,16 @@
 
     <div class="sidebar-footer">
       <div class="user-badge">
-        <div class="user-avatar">{{ session.get('name', 'U')[0] }}</div>
+        <div class="user-avatar">
+          {% if session.get('profile_picture_url') %}
+          <img src="{{ session.get('profile_picture_url') }}" alt="Avatar" class="avatar-img" />
+          {% else %}
+          {{ (session.get('name') or 'User')[0] }}
+          {% endif %}
+        </div>
         <div class="user-info">
-          <span class="user-name">{{ session.get('name', 'User') }}</span>
-          <span class="user-role">{{ session.get('role', 'employee')|title }}</span>
+          <span class="user-name">{{ session.get('name') or 'User' }}</span>
+          <span class="user-role">{{ (session.get('role') or 'employee')|title }}</span>
         </div>
       </div>
       <a href="{{ url_for('logout') }}" class="logout-btn" id="nav-logout">
@@ -89,7 +95,7 @@
       <div class="topbar-right">
         <span class="topbar-greeting">
           Good {% if now.hour < 12 %}morning{% elif now.hour < 17 %}afternoon{% else %}evening{% endif %},
-          {{ session.get('name', 'there').split()[0] }} 👋
+          {{ (session.get('name') or 'there').split()[0] }} 👋
         </span>
       </div>
     </header>

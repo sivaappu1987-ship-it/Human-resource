@@ -5,17 +5,38 @@
 <div class="page-header">
   <div>
     <h1 class="page-greeting">My Profile</h1>
-    <p class="page-date">Manage your personal contact details</p>
+    <p class="page-date">Manage your personal details, profile picture & preferences</p>
   </div>
 </div>
 
 <!-- Profile Header Card -->
 <div class="profile-header-card">
-  <div class="profile-avatar-lg">{{ user.name[0] }}</div>
-  <div class="profile-header-info">
-    <h2 class="profile-name">{{ user.name }}</h2>
-    <p class="profile-meta">{{ user.employee_id }} &nbsp;·&nbsp; {{ user.job_title or 'No Title' }} &nbsp;·&nbsp; {{ user.department or 'No Department' }}</p>
-    <span class="badge badge-{{ user.status | status_badge }}">{{ user.status }}</span>
+  <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:16px;">
+    <div style="display:flex; align-items:center; gap:20px;">
+      <div class="profile-avatar-lg" id="avatar-container" style="overflow:hidden; border:2px solid var(--clr-primary-h); position:relative;">
+        {% if user.profile_picture_url %}
+        <img src="{{ user.profile_picture_url }}" alt="{{ user.name }}" class="avatar-img" id="profile-avatar-display" />
+        {% else %}
+        <span id="profile-initial-display">{{ user.name[0] }}</span>
+        {% endif %}
+      </div>
+
+      <div class="profile-header-info">
+        <h2 class="profile-name">{{ user.name }}</h2>
+        <p class="profile-meta">{{ user.employee_id }} &nbsp;·&nbsp; {{ user.job_title or 'No Title' }} &nbsp;·&nbsp; {{ user.department or 'No Department' }}</p>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="badge badge-{{ user.status | status_badge }}">{{ user.status }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo Crop Button -->
+    <div>
+      <input type="file" id="photoFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)" />
+      <button type="button" class="btn btn-primary" onclick="document.getElementById('photoFileInput').click();" id="btn-trigger-crop">
+        📷 Upload & Crop Photo
+      </button>
+    </div>
   </div>
 </div>
 
@@ -43,7 +64,7 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" id="btn-save-profile">Save Changes</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-profile">Save Contact Info</button>
       </div>
     </form>
   </div>
@@ -83,4 +104,200 @@
   </div>
 
 </div>
+
+<!-- ── Documents Card Section ────────────────────────────────────────── -->
+<div class="dash-section" style="margin-top: 24px;">
+  <div class="section-header">
+    <h2 class="section-heading">📁 Employee Documents</h2>
+    <span class="section-badge">0 documents</span>
+  </div>
+
+  <div class="empty-state" style="padding: 32px; text-align: center;">
+    <span style="font-size: 36px; display: block; margin-bottom: 8px;">📄</span>
+    <p style="color: var(--clr-heading); font-weight: var(--fw-semi); font-size: 15px; margin-bottom: 4px;">No documents uploaded yet</p>
+    <p style="font-size: 13px; color: var(--clr-muted); margin-bottom: 16px; max-width: 440px;">Official identity proofs, tax declarations, and offer letters will be stored securely here.</p>
+    <button class="btn btn-sm btn-ghost" disabled style="opacity: 0.5; cursor: not-allowed;" title="Document upload feature coming soon" id="btn-upload-doc-disabled">
+      🔒 Upload Document (Coming Soon)
+    </button>
+  </div>
+</div>
+
+<!-- ── IMAGE CROPPER MODAL ────────────────────────────────────────────── -->
+<div id="cropModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:var(--radius-md); width:90%; max-width:440px; padding:24px; box-shadow:var(--shadow-glow); display:flex; flex-direction:column; gap:16px;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:16px; font-weight:var(--fw-bold); color:var(--clr-heading); margin:0;">Crop & Adjust Profile Photo</h3>
+      <button type="button" onclick="closeCropModal()" style="background:none; border:none; color:var(--clr-muted); font-size:20px; cursor:pointer;">✕</button>
+    </div>
+
+    <!-- Canvas Container -->
+    <div style="position:relative; width:300px; height:300px; margin:0 auto; background:#111; border-radius:12px; overflow:hidden; cursor:grab;" id="canvasWrapper">
+      <canvas id="cropCanvas" width="300" height="300" style="width:300px; height:300px; display:block;"></canvas>
+    </div>
+
+    <!-- Controls -->
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:13px; color:var(--clr-muted);">Zoom:</span>
+        <input type="range" id="zoomRange" min="0.3" max="3" step="0.05" value="1" style="flex:1;" oninput="onZoomChange(this.value)" />
+      </div>
+      <p style="font-size:11px; color:var(--clr-muted); text-align:center; margin:0;">
+        💡 Drag the photo to center your face inside the circle.
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+      <button type="button" class="btn btn-ghost" onclick="closeCropModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" id="btn-save-cropped" onclick="saveCroppedPhoto()">
+        ✂️ Save & Apply Photo
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let loadedImg = null;
+let imgX = 0, imgY = 0;
+let scale = 1.0;
+let isDragging = false;
+let startX = 0, startY = 0;
+
+const canvas = document.getElementById('cropCanvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
+const modal = document.getElementById('cropModalOverlay');
+const wrapper = document.getElementById('canvasWrapper');
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    loadedImg = new Image();
+    loadedImg.onload = function() {
+      // Center image initially
+      scale = Math.max(300 / loadedImg.width, 300 / loadedImg.height);
+      document.getElementById('zoomRange').value = scale;
+      imgX = (300 - loadedImg.width * scale) / 2;
+      imgY = (300 - loadedImg.height * scale) / 2;
+      
+      modal.style.display = 'flex';
+      drawCanvas();
+    };
+    loadedImg.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function drawCanvas() {
+  if (!ctx || !loadedImg) return;
+  
+  ctx.clearRect(0, 0, 300, 300);
+  
+  // Draw scaled and panned image
+  ctx.drawImage(loadedImg, imgX, imgY, loadedImg.width * scale, loadedImg.height * scale);
+  
+  // Overlay circular vignette mask
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.beginPath();
+  ctx.rect(0, 0, 300, 300);
+  ctx.arc(150, 150, 130, 0, Math.PI * 2, true);
+  ctx.fill();
+  
+  // Draw crisp circle border guide
+  ctx.strokeStyle = '#1D9E75';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(150, 150, 130, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function onZoomChange(val) {
+  const newScale = parseFloat(val);
+  // Keep center fixed when zooming
+  const centerX = 150 - (150 - imgX) * (newScale / scale);
+  const centerY = 150 - (150 - imgY) * (newScale / scale);
+  scale = newScale;
+  imgX = centerX;
+  imgY = centerY;
+  drawCanvas();
+}
+
+// Drag / Pan handling
+if (wrapper) {
+  wrapper.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX - imgX;
+    startY = e.clientY - imgY;
+    wrapper.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    imgX = e.clientX - startX;
+    imgY = e.clientY - startY;
+    drawCanvas();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+    if (wrapper) wrapper.style.cursor = 'grab';
+  });
+}
+
+function closeCropModal() {
+  if (modal) modal.style.display = 'none';
+  document.getElementById('photoFileInput').value = '';
+}
+
+function saveCroppedPhoto() {
+  if (!loadedImg) return;
+
+  const btn = document.getElementById('btn-save-cropped');
+  btn.disabled = true;
+  btn.innerText = 'Uploading...';
+
+  // Create an offscreen 300x300 canvas to extract pure circular image
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = 300;
+  exportCanvas.height = 300;
+  const expCtx = exportCanvas.getContext('2d');
+
+  // Create circular clip
+  expCtx.beginPath();
+  expCtx.arc(150, 150, 150, 0, Math.PI * 2);
+  expCtx.clip();
+
+  // Draw image
+  expCtx.drawImage(loadedImg, imgX, imgY, loadedImg.width * scale, loadedImg.height * scale);
+
+  const croppedDataUrl = exportCanvas.toDataURL('image/png');
+
+  // Send to backend via AJAX
+  fetch('/profile/upload-photo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image_data: croppedDataUrl })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      window.location.reload();
+    } else {
+      alert('Upload failed: ' + (data.error || 'Unknown error'));
+      btn.disabled = false;
+      btn.innerText = '✂️ Save & Apply Photo';
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Failed to upload photo.');
+    btn.disabled = false;
+    btn.innerText = '✂️ Save & Apply Photo';
+  });
+}
+</script>
 {% endblock %}

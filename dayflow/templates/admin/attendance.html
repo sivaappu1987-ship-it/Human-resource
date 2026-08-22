@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Attendance — Admin — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">Attendance Management</h1>
+    <p class="page-date">Filter by date to view daily records</p>
+  </div>
+  <!-- Date picker -->
+  <form method="GET" action="/admin/attendance" id="form-date-filter" style="display:flex;align-items:center;gap:10px;">
+    <label class="form-label" style="margin:0;white-space:nowrap;" for="date-picker">Filter by date:</label>
+    <input id="date-picker" name="date" type="date" class="form-input" style="width:180px;"
+           value="{{ filter_date }}" onchange="this.form.submit()" />
+  </form>
+</div>
+
+<!-- Summary bar -->
+<div class="att-summary-bar">
+  <div class="att-summary-item summary-present">
+    <span class="summary-count">{{ present_count }}</span>
+    <span class="summary-label">Present</span>
+  </div>
+  <div class="att-summary-sep"></div>
+  <div class="att-summary-item summary-halfday">
+    <span class="summary-count">{{ halfday_count }}</span>
+    <span class="summary-label">Half-day</span>
+  </div>
+  <div class="att-summary-sep"></div>
+  <div class="att-summary-item summary-absent">
+    <span class="summary-count">{{ absent_count }}</span>
+    <span class="summary-label">Absent</span>
+  </div>
+  {% if leave_count > 0 %}
+  <div class="att-summary-sep"></div>
+  <div class="att-summary-item summary-leave">
+    <span class="summary-count">{{ leave_count }}</span>
+    <span class="summary-label">On Leave</span>
+  </div>
+  {% endif %}
+  <div class="att-summary-date">
+    Records for <strong>{{ filter_date | friendly_date }}</strong>
+  </div>
+</div>
+
+<!-- Attendance Table -->
+<div class="dash-section">
+  <div class="section-header">
+    <h2 class="section-heading">Daily Attendance</h2>
+    <span class="section-badge">{{ records | length }} records</span>
+  </div>
+
+  {% if records %}
+  <div class="table-wrapper">
+    <table id="admin-att-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Emp ID</th>
+          <th>Date</th>
+          <th>Check In</th>
+          <th>Check Out</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td>
+            <div class="emp-name-cell">
+              <div class="emp-avatar-sm">{{ rec.emp_name[0] }}</div>
+              <span>{{ rec.emp_name }}</span>
+            </div>
+          </td>
+          <td><code class="emp-id-code">{{ rec.emp_code }}</code></td>
+          <td>{{ rec.date | friendly_date }}</td>
+          <td>{{ rec.check_in or '—' }}</td>
+          <td>{{ rec.check_out or '—' }}</td>
+          <td><span class="badge badge-{{ rec.status | status_badge }}">{{ rec.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span>📭</span>
+    <p>No attendance records found for <strong>{{ filter_date | friendly_date }}</strong>.</p>
+    <p style="font-size:12px;margin-top:4px;">Try a different date or check that employees have been seeded.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

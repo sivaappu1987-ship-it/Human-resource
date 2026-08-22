@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Payroll Overview — Admin — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">Payroll Overview</h1>
+    <p class="page-date">Company-wide salary allocation and employee compensation management</p>
+  </div>
+</div>
+
+<!-- Total Payroll Summary Card -->
+<div class="stats-grid" style="grid-template-columns: 1fr 3fr; margin-bottom: 28px;">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">💰</div>
+    <div class="stat-body">
+      <span class="stat-value accent-green">{{ payroll_sum | inr }}</span>
+      <span class="stat-label">Total Monthly Payroll</span>
+      <span class="stat-sub">Across all {{ employees | length }} active employees</span>
+    </div>
+  </div>
+</div>
+
+<div class="dash-section">
+  <div class="section-header">
+    <h2 class="section-heading">Employee Compensation Directory</h2>
+    <span class="section-badge">{{ employees | length }} employees</span>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="admin-payroll-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Emp ID</th>
+          <th>Department</th>
+          <th>Job Title</th>
+          <th>Monthly Salary</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr>
+          <td>
+            <div class="emp-name-cell">
+              <div class="emp-avatar-sm">{{ emp.name[0] }}</div>
+              <strong>{{ emp.name }}</strong>
+            </div>
+          </td>
+          <td><code class="emp-id-code">{{ emp.employee_id }}</code></td>
+          <td>{{ emp.department or '—' }}</td>
+          <td>{{ emp.job_title or '—' }}</td>
+          <td class="salary-cell">{{ emp.salary | inr }}</td>
+          <td><span class="badge badge-{{ emp.status | status_badge }}">{{ emp.status }}</span></td>
+          <td>
+            <a href="{{ url_for('admin_employee_detail', emp_id=emp.id) }}"
+               class="btn btn-sm btn-ghost"
+               id="btn-edit-payroll-{{ emp.id }}">
+              ✏️ Edit
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

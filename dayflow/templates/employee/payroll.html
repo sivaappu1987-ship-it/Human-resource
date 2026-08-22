@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}My Payroll — Dayflow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-greeting">My Payroll</h1>
+    <p class="page-date">Compensation details and monthly breakdown</p>
+  </div>
+</div>
+
+<div class="dash-section" style="max-width: 650px;">
+  <div class="section-header">
+    <h2 class="section-heading">💳 Salary & Compensation Card</h2>
+    <span class="badge badge-{{ user.status | status_badge }}">{{ user.status }}</span>
+  </div>
+
+  <div class="card" style="background: var(--clr-surface-2); border: 1px solid var(--clr-border);">
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--clr-border);">
+      <div class="profile-avatar-lg" style="width:52px; height:52px; font-size:20px;">
+        {{ user.name[0] }}
+      </div>
+      <div>
+        <h3 style="font-size:18px; font-weight:var(--fw-bold); color:var(--clr-heading);">{{ user.name }}</h3>
+        <p style="font-size:13px; color:var(--clr-muted);">
+          <code class="emp-id-code">{{ user.employee_id }}</code> &nbsp;·&nbsp; {{ user.job_title or 'Employee' }}
+        </p>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+      <div class="readonly-field">
+        <span class="readonly-label">Department</span>
+        <span class="readonly-value">{{ user.department or 'General' }}</span>
+      </div>
+      <div class="readonly-field">
+        <span class="readonly-label">Account Status</span>
+        <span class="readonly-value"><span class="badge badge-{{ user.status | status_badge }}">{{ user.status }}</span></span>
+      </div>
+    </div>
+
+    <div style="background: rgba(29, 158, 117, 0.1); border: 1px dashed rgba(29, 158, 117, 0.35); border-radius: var(--radius-md); padding: 20px; text-align: center;">
+      <span style="font-size:12px; font-weight:var(--fw-semi); color:var(--clr-muted); text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">
+        Monthly Fixed Gross Salary
+      </span>
+      <span style="font-size:36px; font-weight:var(--fw-bold); color:var(--color-emerald-light); display:block; line-height:1.2;">
+        {{ user.salary | inr }}
+      </span>
+      <span style="font-size:12px; color:var(--clr-muted); margin-top:4px; display:block;">
+        Direct deposit to registered bank account on the 1st of every month
+      </span>
+    </div>
+  </div>
+</div>
+{% endblock %}
